@@ -513,4 +513,5 @@ public class ActivityService {
                 cal1.get(Calendar.DAY_OF_MONTH) == cal2.get(Calendar.DAY_OF_MONTH);
     }
 
+    
 }
