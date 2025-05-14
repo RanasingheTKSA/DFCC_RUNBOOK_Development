@@ -9,6 +9,11 @@ import lombok.Data;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 @Service
 @Data
@@ -105,4 +110,26 @@ public class RecordService {
             return "Daily Records Created";
         }
     }
+
+
+    // Admin Panel
+//    public Map<String, Long> getRecordCountsByDate(String dateStr) {
+//        try {
+//            LocalDate date = LocalDate.parse(dateStr);
+//            Date startDate = Date.from(date.atStartOfDay(ZoneId.systemDefault()).toInstant());
+//            Date endDate = Date.from(date.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant());
+//
+//            Map<String, Long> counts = new LinkedHashMap<>();
+//            counts.put("total", recordRepo.countByDateBetween(startDate, endDate));
+//            counts.put("completed", recordRepo.countByDateBetweenAndStatus(startDate, endDate, "complete"));
+//            counts.put("pending", recordRepo.countByDateBetweenAndStatus(startDate, endDate, "pending"));
+//            counts.put("notComplete", recordRepo.countByDateBetweenAndStatus(startDate, endDate, "not complete"));
+//
+//            return counts;
+//        } catch (Exception e) {
+//            throw new RuntimeException("Error processing record counts", e);
+//        }
+//    }
+
+
 }

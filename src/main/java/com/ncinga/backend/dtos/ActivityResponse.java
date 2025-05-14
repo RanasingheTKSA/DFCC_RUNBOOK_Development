@@ -2,6 +2,7 @@ package com.ncinga.backend.dtos;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import java.util.Map;
 
 import java.util.Date;
 
@@ -24,4 +25,5 @@ public class ActivityResponse {
     private String completedTime;
     private Date date;
     private String comment;
+
 }

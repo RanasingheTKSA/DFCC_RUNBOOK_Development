@@ -4,8 +4,10 @@ import ch.qos.logback.core.net.SyslogOutputStream;
 import com.ncinga.backend.documents.Activities;
 import com.ncinga.backend.documents.Records;
 import com.ncinga.backend.dtos.ActivityResponse;
+import com.ncinga.backend.dtos.ActivityResponseWithCounts;
 import com.ncinga.backend.services.ActivityService;
 import lombok.Data;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -22,6 +24,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Data
 public class ActivityController {
 
+    @Autowired
     private final ActivityService activityService;
 
     @PostMapping(path="/create")
@@ -68,5 +71,12 @@ public class ActivityController {
         return ResponseEntity.ok(activityService.getWhatsappDetails(date, shift));
     }
 
+    // Admin Panel
+    @GetMapping(path = "/getallwithcountsbydateandshift/{date}/{shift}")
+    public ResponseEntity<ActivityResponseWithCounts> getAllWithCountsByDateAndShift(
+            @PathVariable @DateTimeFormat(pattern = "yyyy-MM-dd") Date date,
+            @PathVariable String shift) {
+        return ResponseEntity.ok(activityService.getAllByDateAndShiftWithCounts(date, shift));
+    }
 
 }

@@ -3,10 +3,12 @@ package com.ncinga.backend.services;
 import com.ncinga.backend.documents.Activities;
 import com.ncinga.backend.documents.Records;
 import com.ncinga.backend.dtos.ActivityResponse;
+import com.ncinga.backend.dtos.ActivityResponseWithCounts;
 import com.ncinga.backend.repos.ActivityRepo;
 import com.ncinga.backend.repos.RecordRepo;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.ldap.repository.Query;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -14,6 +16,7 @@ import org.springframework.stereotype.Service;
 import java.text.SimpleDateFormat;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -25,6 +28,7 @@ import java.util.stream.Stream;
 @RequiredArgsConstructor
 public class ActivityService {
 
+    @Autowired
     private final ActivityRepo activityRepo;
     private final RecordRepo recordRepo;
     private final WhatsAppService whatsAppService;
@@ -513,5 +517,76 @@ public class ActivityService {
                 cal1.get(Calendar.DAY_OF_MONTH) == cal2.get(Calendar.DAY_OF_MONTH);
     }
 
-    
+
+    // Admin Panel Count
+    public ActivityResponseWithCounts getAllByDateAndShiftWithCounts(Date date, String shift) {
+        List<ActivityResponse> responses = getActivityResponses(date, shift);
+
+        int totalCount = responses.size();
+        int completedCount = (int) responses.stream()
+                .filter(ar -> "completed".equalsIgnoreCase(ar.getStatus()))
+                .count();
+        int pendingCount = (int) responses.stream()
+                .filter(ar -> "pending".equalsIgnoreCase(ar.getStatus()))
+                .count();
+        int notApplicableCount = (int) responses.stream()
+                .filter(ar -> "not applicable".equalsIgnoreCase(ar.getStatus()))
+                .count();
+
+        System.out.println("TOTAL COUNT : " + totalCount);
+        System.out.println("COMPLETED COUNT : " + completedCount);
+        System.out.println("PENDING COUNT : " + pendingCount);
+        System.out.println("NOT APPLICABLE COUNT : " + notApplicableCount);
+
+        return new ActivityResponseWithCounts(
+                responses.stream()
+                        .sorted(Comparator.comparing(ActivityResponse::getActivityOrder))
+                        .toList(),
+                totalCount,
+                completedCount,
+                pendingCount,
+                notApplicableCount
+        );
+    }
+
+    private List<ActivityResponse> getActivityResponses(Date date, String shift) {
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy  HH:mm");
+        List<Activities> activityListByShift = activityRepo.findByShift(shift)
+                .orElseThrow(() -> new RuntimeException("Value not present"));
+
+        List<Activities> activityListByShiftAndDate = activityListByShift.stream()
+                .peek(activity -> {
+                    List<Records> filteredRecords = activity.getRecords().stream()
+                            .filter(record -> isSameDate(record.getDate(), date))
+                            .collect(Collectors.toList());
+                    activity.setRecords(filteredRecords);
+                }).toList();
+
+        return activityListByShiftAndDate.stream()
+                .flatMap(activity -> activity.getRecords().stream().map(record -> {
+                    ActivityResponse response = new ActivityResponse();
+                    response.setActivityId(activity.getId());
+                    response.setName(activity.getName());
+                    response.setScheduleTime(activity.getScheduleTime());
+                    response.setTime(activity.getTime());
+                    response.setDescription(activity.getDescription());
+                    response.setShift(activity.getShift());
+                    response.setRecordId(record.getId());
+                    response.setActivityOrder(activity.getActivityOrder());
+                    response.setUser(record.getUser());
+                    response.setConfirmUser(record.getConfirmUser());
+                    response.setConfirmation(record.isConfirmation());
+                    response.setStatus(record.getStatus());
+                    if (record.getCompletedTime() != null) {
+                        response.setCompletedTime(dateFormat.format(record.getCompletedTime()));
+                    }
+                    if (record.getConfirmTime() != null) {
+                        response.setConfirmTime(dateFormat.format(record.getConfirmTime()));
+                    }
+                    response.setDate(record.getDate());
+                    response.setComment(record.getComment());
+                    return response;
+                })).toList();
+    }
+
 }
